@@ -6,7 +6,7 @@
 
 A powerful and user-friendly Python wrapper for the Robinhood Crypto API. Trade cryptocurrencies programmatically with ease!
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Installation
 
@@ -18,30 +18,24 @@ pip install cryptohood
 
 ```python
 from cryptohood import CryptoHood
+from datetime import datetime, timedelta
 
-# Initialize the client
-client = CryptoHood(
-    api_key="your_api_key",
-    api_secret="your_api_secret"
-)
+# Your API credentials
+API_KEY = "your-api-key"
+PRIVATE_KEY = "your-private-key-base64"
 
-# Get crypto quotes
-btc_quote = client.get_crypto_quotes("BTC")
-print(f"Current BTC price: ${btc_quote['price']}")
+client = CryptoHood(api_key=API_KEY, private_key=PRIVATE_KEY)
 
-# Place a buy order
-order = client.place_order(
-    symbol="BTC",
-    quantity=0.1,
-    side="buy"
-)
+# Get orders from last 24 hours
+start_time = datetime.utcnow() - timedelta(days=1)
 
-# Check order status
-status = client.get_order_status(order['id'])
-print(f"Order status: {status}")
+orders = client.get_orders(created_at_start=start_time)
+
+print(orders)
+
 ```
 
-## 📚 Documentation
+## Documentation
 
 For detailed documentation, visit [Soon]
 
@@ -53,15 +47,11 @@ For detailed documentation, visit [Soon]
 - Account Management
 - Error Handling
 
-## 📝 Example Scripts
+## Example Scripts
 
 Check out the `examples` directory for more usage examples:
 
-- Basic usage: `examples/basic_usage.py`
-- Market data streaming: `examples/stream_data.py`
-- Automated trading: `examples/auto_trader.py`
-
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
@@ -71,11 +61,11 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📜 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This package is unofficial and not affiliated with Robinhood. Use at your own risk. Always verify your trading logic and test thoroughly before using in production.
 
