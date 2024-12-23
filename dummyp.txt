@@ -1,0 +1,711 @@
+Fetches the Robinhood Crypto account details for the current user.
+
+get /api/v1/crypto/trading/accounts/
+
+curl -X "GET" "https://trading.robinhood.com/api/v1/crypto/trading/accounts/" \
+    -H 'x-api-key: <YOUR-API-KEY>' \
+    -H 'x-timestamp: <timestamp unix>' \
+    -H 'x-signature: <YOUR-MSG-SIGNATURE>' \
+    -H 'Content-Type: application/json; charset=utf-8'
+
+Response samples 200
+
+{
+  "account_number": "string",
+  "status": "active",
+  "buying_power": "string",
+  "buying_power_currency": "string"
+}
+
+
+account_number	
+string (Account number)
+The account number of the crypto account
+
+status	
+string (Status)
+Enum: "active" "deactivated" "sell_only"
+User account status for trading
+
+buying_power	
+string (Buying power)
+User buying power amount in fiat currency
+
+buying_power_currency	
+string (Buying power currency)
+Example: USD
+
+import nacl.signing
+import base64
+import time
+
+# Replace these with your base64-encoded keys
+private_key_base64 = "xQnTJVeQLmw1/Mg2YimEViSpw/SdJcgNXZ5kQkAXNPU="
+public_key_base64 = "jPItx4TLjcnSUnmnXQQyAKL4eJj3+oWNNMmmm2vATqk="
+
+api_key = "rh-api-6148effc-c0b1-486c-8940-a1d099456be6"
+
+# Get the current Unix timestamp in seconds
+# You can get the current_timestamp with the following code:
+# current_timestamp = int(time.time())
+# This value is hardcoded for demonstration purposes to match the example in the documentation
+current_timestamp = "1698708981"
+
+path = f"/api/v1/crypto/trading/orders/"
+
+method = "POST"
+
+body = {
+    "client_order_id": "131de903-5a9c-4260-abc1-28d562a5dcf0",
+    "side": "buy",
+    "symbol": "BTC-USD",
+    "type": "market",
+    "market_order_config": {
+        "asset_quantity": "0.1"
+    },
+}
+
+# Convert base64 strings to seed (for private key) and bytes (for public key)
+private_key_seed = base64.b64decode(private_key_base64)
+public_key_bytes = base64.b64decode(public_key_base64)
+
+# Create private key (from seed) and public key (from bytes)
+private_key = nacl.signing.SigningKey(private_key_seed)
+public_key = nacl.signing.VerifyKey(public_key_bytes)
+
+# Create the message to sign
+message = f"{api_key}{current_timestamp}{path}{method}{body}"
+
+# Sign the message
+signed = private_key.sign(message.encode("utf-8"))
+
+base64_signature = base64.b64encode(signed.signature).decode("utf-8")
+print(base64_signature)
+
+# Verify the signature
+public_key.verify(signed.message, signed.signature)
+
+The "x-api-key" header should contain your API key. This API key is obtained from the Robinhood API Credentials Portal when enrolling in the Robinhood Crypto API program.
+
+*API keys issued after August 13, 2024 will be formatted as "rh-api-[uuid]." Functionality will remain the same, and older keys will keep the original formatting (no "rh-api" prepend).
+
+Header parameter name: x-api-key
+ API Key: API Signature
+Authenticated requests should be signed with the "x-signature" header, using a signature generated with the following: private key, API key, timestamp, path, method, and body. Here’s how the message signature should be defined:
+
+message = f"{api_key}{current_timestamp}{path}{method}{body}"
+
+
+########### 2 ###############
+Fetch a single bid and ask price per symbol, representing our current best price. This price does not take into account the order size, and may not be the final execution price.
+
+The bid and ask prices are the prices our trading venues provide for an order, inclusive of a spread. The buy spread is the percent difference between the ask and the mid price. The sell spread is the percent difference between the bid and the mid price.
+
+get /api/v1/crypto/marketdata/best_bid_ask/
+curl -X "GET" "https://trading.robinhood.com/api/v1/crypto/marketdata/best_bid_ask/?symbol=BTC-USD" \
+    -H 'x-api-key: <YOUR-API-KEY>' \
+    -H 'x-timestamp: <timestamp unix>' \
+    -H 'x-signature: <YOUR-MSG-SIGNATURE>' \
+    -H 'Content-Type: application/json; charset=utf-8' 
+
+200:
+{
+  "results": [
+    {
+      "symbol": "string",
+      "price": 0,
+      "bid_inclusive_of_sell_spread": 0,
+      "sell_spread": 0,
+      "ask_inclusive_of_buy_spread": 0,
+      "buy_spread": 0,
+      "timestamp": "string"
+    }
+  ]
+}
+400 
+{
+  "type": "validation_error",
+  "errors": [
+    {
+      "detail": "string",
+      "attr": "string"
+    }
+  ]
+}
+
+query Parameters
+symbol	
+string
+Example: symbol=BTC-USD
+List of trading pair symbol(s) to retrieve data for.
+
+Multiple symbols can be provided by using the "symbol" parameter with different values. Ensure that the symbol(s) are provided in all uppercase.
+
+For example, ?symbol=BTC-USD&symbol=ETH-USD
+results
+required
+Array of objects (BidAskPrice)
+Array 
+symbol	
+string (Symbol)
+Currency pair symbol
+
+price	
+number <double> (Price)
+Midpoint of bid_inclusive_of_sell_spread and ask_inclusive_of_buy_spread
+
+bid_inclusive_of_sell_spread	
+number <double> (Bid inclusive of sell spread)
+The best price our trading venues provide for a sell order inclusive of the sell spread
+
+sell_spread	
+number <double> (Sell spread)
+The percent difference between the bid and the mid price, included in bid_inclusive_of_sell_spread
+
+ask_inclusive_of_buy_spread	
+number <double> (Ask inclusive of buy spread)
+The best price our trading venues provide for a buy order inclusive of the buy spread
+
+buy_spread	
+number <double> (Buy spread)
+The percent difference between the ask and the mid price, included in ask_inclusive_of_buy_spread
+
+timestamp	
+string (Timestamp)
+The time when the price was retrieved from our system
+
+400
+Response Schema: application/json
+type	
+string
+Enum: "validation_error" "client_error" "server_error"
+The error type of the response
+
+errors	
+Array of objects
+List of errors
+
+#### 3 #######
+This endpoint returns the estimated cost for a particular symbol, book side, and asset quantity. You can include a list of quantities in a single request to retrieve the price for various hypothetical order sizes.
+
+The estimated price represents the expected execution price if you were to subsequently place an order. To estimate the cost for a Buy order, request an Ask quote. If you are preparing to place a Sell order, request a Bid quote. The execution price may vary due to market volatility and once executed the transaction may not be undone.
+
+The bid and ask prices are the best prices our trading venues provide for an order, inclusive of a spread. The buy spread is the percent difference between the ask and the mid price. The sell spread is the percent difference between the bid and the mid price.
+
+get /api/v1/crypto/marketdata/estimated_price/
+
+curl -X "GET" "https://trading.robinhood.com/marketdata/api/v1/estimated_price/?symbol=BTC-USD&side=ask&quantity=0.1,1,1.999" \
+    -H 'x-api-key: <YOUR-API-KEY>' \
+    -H 'x-timestamp: <timestamp unix>' \
+    -H 'x-signature: <YOUR-MSG-SIGNATURE>' \
+    -H 'Content-Type: application/json; charset=utf-8' 
+
+200
+{
+  "results": [
+    {
+      "symbol": "string",
+      "side": "bid",
+      "price": 0,
+      "quantity": 0,
+      "bid_inclusive_of_sell_spread": 0,
+      "sell_spread": 0,
+      "ask_inclusive_of_buy_spread": 0,
+      "buy_spread": 0,
+      "timestamp": "string"
+    }
+  ]
+}
+
+400
+{
+  "type": "validation_error",
+  "errors": [
+    {
+      "detail": "string",
+      "attr": "string"
+    }
+  ]
+}
+
+query Parameters
+symbol
+required
+string
+Example: symbol=BTC-USD
+A string matching a valid currency pair, for example BTC-USD. Ensure that the symbol is provided in all uppercase.
+
+Only USD symbols are accepted.
+
+side
+required
+string
+Enum: "bid" "ask" "both"
+Example: side=bid
+Order side. e.g. bid, ask, or both.
+
+quantity
+required
+string
+Example: quantity=0.1,1,1.999
+Quantity must be between min_order_size and max_order_size as defined in our Get Crypto Trading Pairs endpoint.
+
+A max of 10 quantities can be specified for each request.
+
+
+######### 4 ############
+
+Fetch a list of trading pairs.
+get /api/v1/crypto/trading/trading_pairs/
+
+curl -X "GET" "https://trading.robinhood.com/api/v1/crypto/trading/trading_pairs/?symbol=BTC-USD" \
+    -H 'x-api-key: <YOUR-API-KEY>' \
+    -H 'x-timestamp: <timestamp unix>' \
+    -H 'x-signature: <YOUR-MSG-SIGNATURE>' \
+    -H 'Content-Type: application/json; charset=utf-8'
+
+200
+{
+  "next": "https://trading.robinhood.com/api/v1/crypto/trading/trading_pairs/?cursor={CURSOR_ID}",
+  "previous": "https://trading.robinhood.com/api/v1/crypto/trading/trading_pairs/?cursor={CURSOR_ID}",
+  "results": [
+    {
+      "asset_code": "string",
+      "quote_code": "string",
+      "quote_increment": "string",
+      "asset_increment": "string",
+      "max_order_size": "string",
+      "min_order_size": "string",
+      "status": "tradable",
+      "symbol": "string"
+    }
+  ]
+}
+400
+{
+  "type": "validation_error",
+  "errors": [
+    {
+      "detail": "string",
+      "attr": "string"
+    }
+  ]
+}
+
+query Parameters
+symbol	
+string
+Example: symbol=BTC-USD
+List of trading pair symbol(s) to retrieve data for.
+
+Multiple symbols can be provided by using the "symbol" parameter with different values. Ensure that the symbol(s) are provided in all uppercase.
+
+For example, ?symbol=BTC-USD&symbol=ETH-USD
+
+limit	
+integer
+Limit the number of results per page size
+
+cursor	
+string
+
+################ 5 ####################
+Fetch a list of holdings for the current user.
+
+
+query Parameters
+asset_code	
+string
+Example: asset_code=BTC
+The asset code(s) to retrieve data for.
+
+Multiple asset codes can be provided by using the "asset_code" parameter with different values. Ensure that the asset codes are provided in all uppercase.
+
+For example, ?asset_code=BTC&asset_code=ETH
+
+limit	
+integer
+Limit the number of results per page size
+
+cursor	
+string
+Responses
+200
+{
+"next": "https://trading.robinhood.com/api/v1/crypto/trading/holdings?cursor={CURSOR_ID}",
+"previous": "https://trading.robinhood.com/api/v1/crypto/trading/holdings?cursor={CURSOR_ID}",
+"results": [
+{
+"account_number": "string",
+"asset_code": "string",
+"total_quantity": 0,
+"quantity_available_for_trading": 0
+}
+]
+}
+400
+Response Schema: application/json
+type	
+string
+Enum: "validation_error" "client_error" "server_error"
+The error type of the response
+
+errors	
+Array of objects
+List of errors
+
+404
+Response Schema: application/json
+type	
+string
+Enum: "validation_error" "client_error" "server_error"
+The error type of the response
+
+errors	
+Array of objects
+List of errors
+
+
+get /api/v1/crypto/trading/holdings/
+Request samples
+cURL
+
+Copy
+curl -X "GET" "https://trading.robinhood.com/api/v1/crypto/trading/holdings/?asset_code=BTC" \
+    -H 'x-api-key: <YOUR-API-KEY>' \
+    -H 'x-timestamp: <timestamp unix>' \
+    -H 'x-signature: <YOUR-MSG-SIGNATURE>' \
+    -H 'Content-Type: application/json; charset=utf-8'
+################ 6 ####################
+Fetch a list of orders for the current user.
+get /api/v1/crypto/trading/orders/
+curl -X "GET" "https://trading.robinhood.com/api/v1/crypto/trading/orders/" \
+    -H 'x-api-key: <YOUR-API-KEY>' \
+    -H 'x-timestamp: <timestamp unix>' \
+    -H 'x-signature: <YOUR-MSG-SIGNATURE>' \
+    -H 'Content-Type: application/json; charset=utf-8'
+200:
+{
+  "next": "https://trading.robinhood.com/api/v1/crypto/trading/orders/?cursor={CURSOR_ID}",
+  "previous": "https://trading.robinhood.com/api/v1/crypto/trading/orders/?cursor={CURSOR_ID}",
+  "results": [
+    {
+      "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+      "account_number": "string",
+      "symbol": "string",
+      "client_order_id": "11299b2b-61e3-43e7-b9f7-dee77210bb29",
+      "side": "buy",
+      "executions": [
+        {
+          "effective_price": "string",
+          "quantity": "string",
+          "timestamp": "2019-08-24T14:15:22Z"
+        }
+      ],
+      "type": "limit",
+      "state": "open",
+      "average_price": 0,
+      "filled_asset_quantity": 0,
+      "created_at": "string",
+      "updated_at": "string",
+      "market_order_config": {
+        "asset_quantity": 0
+      },
+      "limit_order_config": {
+        "quote_amount": 0,
+        "asset_quantity": 0,
+        "limit_price": 0,
+        "time_in_force": "gtc"
+      },
+      "stop_loss_order_config": {
+        "quote_amount": 0,
+        "asset_quantity": 0,
+        "stop_price": 0,
+        "time_in_force": "gtc"
+      },
+      "stop_limit_order_config": {
+        "quote_amount": 0,
+        "asset_quantity": 0,
+        "limit_price": 0,
+        "stop_price": 0,
+        "time_in_force": "gtc"
+      }
+    }
+  ]
+}
+
+query Parameters
+created_at_start	
+string
+Example: created_at_start=2023-10-31T20:57:50Z
+Filter by created at start time range (greater than or equal to) in ISO 8601 format
+
+created_at_end	
+string
+Example: created_at_end=2023-10-31T20:57:50Z
+Filter by created at end time range (less than or equal to) in ISO 8601 format
+
+symbol	
+string
+Example: symbol=BTC-USD
+Currency pair symbol. Ensure that the symbol is provided in all uppercase.
+
+id	
+string <uuid>
+Order ID, unique per order
+
+side	
+string
+Enum: "buy" "sell"
+Buy or sell
+
+state	
+string
+Enum: "open" "canceled" "partially_filled" "filled" "failed"
+State of the order
+
+type	
+string
+Enum: "limit" "market" "stop_limit" "stop_loss"
+Type of order
+
+updated_at_start	
+string
+Example: updated_at_start=2023-10-31T20:57:50Z
+Filter by updated at start time range (greater than or equal to) in ISO 8601 format
+
+updated_at_end	
+string
+Example: updated_at_end=2023-10-31T20:57:50Z
+Filter by updated at end time range (less than or equal to) in ISO 8601 format
+
+cursor	
+string
+limit	
+integer
+Limit the number of results per page size
+################ 7 ####################
+
+Place New Crypto Order
+Places a new crypto trading order with an order type.
+post /api/v1/crypto/trading/orders/
+
+{
+  "symbol": "string",
+  "client_order_id": "11299b2b-61e3-43e7-b9f7-dee77210bb29",
+  "side": "buy",
+  "type": "limit",
+  "market_order_config": {
+    "asset_quantity": 0
+  },
+  "limit_order_config": {
+    "quote_amount": 0,
+    "asset_quantity": 0,
+    "limit_price": 0,
+    "time_in_force": "gtc"
+  },
+  "stop_loss_order_config": {
+    "quote_amount": 0,
+    "asset_quantity": 0,
+    "stop_price": 0,
+    "time_in_force": "gtc"
+  },
+  "stop_limit_order_config": {
+    "quote_amount": 0,
+    "asset_quantity": 0,
+    "limit_price": 0,
+    "stop_price": 0,
+    "time_in_force": "gtc"
+  }
+}
+
+201
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "account_number": "string",
+  "symbol": "string",
+  "client_order_id": "11299b2b-61e3-43e7-b9f7-dee77210bb29",
+  "side": "buy",
+  "executions": [
+    {
+      "effective_price": "string",
+      "quantity": "string",
+      "timestamp": "2019-08-24T14:15:22Z"
+    }
+  ],
+  "type": "limit",
+  "state": "open",
+  "average_price": 0,
+  "filled_asset_quantity": 0,
+  "created_at": "string",
+  "updated_at": "string",
+  "market_order_config": {
+    "asset_quantity": 0
+  },
+  "limit_order_config": {
+    "quote_amount": 0,
+    "asset_quantity": 0,
+    "limit_price": 0,
+    "time_in_force": "gtc"
+  },
+  "stop_loss_order_config": {
+    "quote_amount": 0,
+    "asset_quantity": 0,
+    "stop_price": 0,
+    "time_in_force": "gtc"
+  },
+  "stop_limit_order_config": {
+    "quote_amount": 0,
+    "asset_quantity": 0,
+    "limit_price": 0,
+    "stop_price": 0,
+    "time_in_force": "gtc"
+  }
+}
+
+Request Body schema: application/json
+required
+symbol
+required
+string (Symbol)
+Example: BTC-USD
+
+Currency pair symbol. Ensure that the symbol is provided in all uppercase.
+
+client_order_id
+required
+string <uuid> (Client order ID)
+User input order id for idempotency validation
+
+side
+required
+string (Side)
+Enum: "buy" "sell"
+Buy or sell
+
+type
+required
+string
+Enum: "limit" "market" "stop_limit" "stop_loss"
+Type of order
+
+market_order_config	
+object
+Market order configuration
+
+*Required for market orders
+
+limit_order_config	
+object
+Limit order configuration
+
+*Required for limit orders
+
+stop_loss_order_config	
+object
+Stop loss order configuration
+
+*Required for stop loss orders
+
+stop_limit_order_config	
+object
+Stop limit order configuration
+
+*Required for stop limit orders
+
+Responses
+201
+Response Schema: application/json
+id	
+string <uuid> (Order ID)
+Unique per order
+
+account_number	
+string (Account number)
+The account number of the crypto account
+
+symbol	
+string (Symbol)
+Currency pair symbol
+
+client_order_id	
+string <uuid> (Client order ID)
+User input order id for idempotency validation
+
+side	
+string (Side)
+Enum: "buy" "sell"
+Buy or sell
+
+executions	
+Array of objects (OrderExecution)
+type	
+string
+Enum: "limit" "market" "stop_limit" "stop_loss"
+Type of order
+
+state	
+string
+Enum: "open" "canceled" "partially_filled" "filled" "failed"
+State of the order
+
+average_price	
+number or null <double>
+Average price of all executions
+
+filled_asset_quantity	
+number <double>
+Portion of total amount that have been filled
+
+created_at	
+string
+The timestamp of when the order was created
+
+updated_at	
+string
+The timestamp of when the order was updated
+
+market_order_config	
+object
+Order configuration for market orders
+
+limit_order_config	
+object
+Order configuration for limit orders
+
+stop_loss_order_config	
+object
+Order configuration for stop loss orders
+
+stop_limit_order_config	
+object
+Order configuration for stop limit orders
+
+################ 8 #########################3
+
+Cancels an open crypto trading order.
+post /api/v1/crypto/trading/orders/{id}/cancel/
+
+curl -X "POST" "https://trading.robinhood.com/api/v1/crypto/trading/orders/{id}/cancel/" \
+    -H 'x-api-key: <YOUR-API-KEY>' \
+    -H 'x-timestamp: <timestamp unix>' \
+    -H 'x-signature: <YOUR-MSG-SIGNATURE>' \
+    -H 'Content-Type: application/json; charset=utf-8' 
+
+200: Cancel request was submitted for order {id}
+400: {
+  "type": "validation_error",
+  "errors": [
+    {
+      "detail": "string",
+      "attr": "string"
+    }
+  ]
+}
+
+path Parameters
+id
+required
+string <uuid>
+Order ID, unique per order
+

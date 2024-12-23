@@ -1,4 +1,4 @@
-# CryptoHood 
+# CryptoHood
 
 [![PyPI version](https://badge.fury.io/py/cryptohood.svg)](https://badge.fury.io/py/cryptohood)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -47,18 +47,19 @@ For detailed documentation, visit [Soon]
 
 ### Key Features Documentation
 
-* Authentication
-* Market Data
-* Trading
-* Account Management
-* Error Handling
+- Authentication
+- Market Data
+- Trading
+- Account Management
+- Error Handling
 
 ## 📝 Example Scripts
 
 Check out the `examples` directory for more usage examples:
-* Basic usage: `examples/basic_usage.py`
-* Market data streaming: `examples/stream_data.py`
-* Automated trading: `examples/auto_trader.py`
+
+- Basic usage: `examples/basic_usage.py`
+- Market data streaming: `examples/stream_data.py`
+- Automated trading: `examples/auto_trader.py`
 
 ## 🤝 Contributing
 
@@ -80,9 +81,7 @@ This package is unofficial and not affiliated with Robinhood. Use at your own ri
 
 ## 📞 Support
 
-* Create an issue on GitHub
-* Email: humzasami20@gmail.com
-
-
+- Create an issue on GitHub
+- Email: humzasami20@gmail.com
 
 Made with ❤️ by Humza Sami
